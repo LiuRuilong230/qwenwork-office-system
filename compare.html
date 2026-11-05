@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WorkBuddy 对比 | 千问办公全量系统</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div id="topbar-slot"></div>
+<nav class="sidenav" id="sidenav"></nav>
+<div class="main">
+  <div class="page">
+    <div class="pagehead">
+      <div class="eyebrow">COMPARE · 中立参数对照</div>
+      <h1>千问办公 vs WorkBuddy</h1>
+      <p>纯中立参数对照，覆盖产品 / 功能 / 价格 / 价值四个维度。千问办公＝阿里巴巴（千问大模型），WorkBuddy＝腾讯（混元大模型），二者为不同厂商竞品。所有参数取自双方官方/用户提供材料，冲突项已标注。</p>
+    </div>
+
+    <div class="note" style="margin-bottom:18px"><b>口径声明：</b>本表仅并列事实参数，不做优劣倾向。WorkBuddy 数据取自用户提供的腾讯官方销售材料（PPT/定价表/企业方案）。面客禁止口播单价，以各自官方报价工具为准。</div>
+
+    <div class="grid g2" style="margin-bottom:22px">
+      <div class="card reveal cmp-card" style="border-top:4px solid var(--brand)">
+        <div class="cmp-head">
+          <img class="cmp-ic" src="assets/brand/qwenwork-icon-180.png" alt="千问办公">
+          <div class="cmp-tt"><h3>千问办公</h3><span class="cmp-vendor">阿里巴巴 · 千问系列大模型</span></div>
+        </div>
+        <p class="cmp-desc">一站式 AI 办公平台，不止于对话更注重交付。覆盖桌面端/网页端/钉钉内，深度接入钉钉生态。</p>
+      </div>
+      <div class="card reveal cmp-card" style="border-top:4px solid #6f7ff2;transition-delay:60ms">
+        <div class="cmp-head">
+          <span class="cmp-ic wb-ic" role="img" aria-label="WorkBuddy"></span>
+          <div class="cmp-tt"><h3>WorkBuddy</h3><span class="cmp-vendor">腾讯 · 混元 3.0 Preview</span></div>
+        </div>
+        <p class="cmp-desc">企业 AI 工作台/智能办公助手，覆盖桌面端/小程序/管理后台/IM，接入企业微信与腾讯产品套件。</p>
+      </div>
+    </div>
+
+    <div class="tabs" id="tabs">
+      <div class="tab on" data-t="prod">产品 / 功能</div>
+      <div class="tab" data-t="price">价格对照</div>
+      <div class="tab" data-t="value">价值对照</div>
+    </div>
+    <div id="panel"></div>
+  </div>
+</div>
+<script src="assets/data.js"></script>
+<script src="assets/app.js"></script>
+<script>
+initShell('compare');
+function render(t){
+  const p=document.getElementById('panel');
+  if(t==='prod'){
+    p.innerHTML=`<table class="cmp fade-in"><thead><tr><th style="width:150px">对比维度</th><th class="qw">千问办公（阿里）</th><th>WorkBuddy（腾讯）</th></tr></thead><tbody>
+      ${COMPARE.dims.map(d=>`<tr><td class="dim">${d.dim}</td><td>${d.qw}</td><td>${d.wb}</td></tr>`).join('')}
+    </tbody></table>`;
+  } else if(t==='price'){
+    p.innerHTML=`<div class="note fade-in" style="margin-bottom:14px"><b>报价口径：</b>${COMPARE.price.note}</div>
+    <table class="cmp fade-in"><thead><tr><th style="width:130px">档位</th><th class="qw">千问办公（阿里）</th><th>WorkBuddy（腾讯）</th></tr></thead><tbody>
+      ${COMPARE.price.rows.map(r=>`<tr><td class="dim">${r.tier}</td><td>${r.qw}</td><td>${r.wb}</td></tr>`).join('')}
+    </tbody></table>`;
+  } else {
+    p.innerHTML=`<table class="cmp fade-in"><thead><tr><th style="width:150px">价值维度</th><th class="qw">千问办公</th><th>WorkBuddy</th></tr></thead><tbody>
+      ${COMPARE.value.map(v=>`<tr><td class="dim">${v.t}</td><td>${v.qw}</td><td>${v.wb}</td></tr>`).join('')}
+    </tbody></table>`;
+  }
+}
+document.getElementById('tabs').addEventListener('click',e=>{const t=e.target.closest('.tab');if(!t)return;
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));t.classList.add('on');render(t.dataset.t);});
+render('prod');
+requestAnimationFrame(()=>document.querySelectorAll('.reveal').forEach(el=>el.classList.add('in')));
+</script>
+</body>
+</html>

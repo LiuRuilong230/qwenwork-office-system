@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>信任背书 | 千问办公全量系统</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div id="topbar-slot"></div>
+<nav class="sidenav" id="sidenav"></nav>
+<div class="main">
+  <div class="page">
+    <div class="pagehead">
+      <div class="eyebrow">TRUST · 信任背书</div>
+      <h1>安全合规与信任背书</h1>
+      <p>千问办公的资质认证、企业级安全管控与规模实力，面客建立信任的硬支撑。</p>
+    </div>
+
+    <div class="grid g4" id="scale" style="margin-bottom:22px"></div>
+
+    <div class="sec-title"><span class="bar"></span>资质认证</div>
+    <div class="grid g3" id="certs"></div>
+
+    <div class="sec-title"><span class="bar"></span>企业级安全管控（企业旗舰版）</div>
+    <div class="card" id="sec" style="line-height:2"></div>
+
+    <div class="sec-title"><span class="bar"></span>企业版能力全景</div>
+    <div class="grid g2" id="ent"></div>
+
+    <div class="note" style="margin-top:22px"><b>说明：</b>软件著作权、信通院互联网智能体治理认证等证书原件存于钉钉知识库「企业版详细材料」，全量版将接入证书图与编号。安全管控能力同步自官方帮助中心企业旗舰版文档。</div>
+  </div>
+</div>
+<script src="assets/data.js"></script>
+<script src="assets/app.js"></script>
+<script>
+initShell('trust');
+document.getElementById('scale').innerHTML=TRUST.scale.map((s,i)=>`<div class="cap reveal" style="transition-delay:${i*50}ms;text-align:center"><h3 style="font-size:28px;font-weight:900;color:var(--brand-deep)">${s.n}</h3><p>${s.l}</p></div>`).join('');
+document.getElementById('certs').innerHTML=TRUST.certs.map((c,i)=>`<div class="cap reveal" style="transition-delay:${i*60}ms"><div class="ci">${c.ic}</div><h3>${c.t}</h3><p>${c.d}</p></div>`).join('');
+document.getElementById('sec').innerHTML=`<ul style="list-style:none;display:flex;flex-direction:column;gap:10px">${TRUST.security.map(s=>`<li style="display:flex;gap:10px;font-size:13.5px;color:var(--ink2)"><span style="color:var(--brand);flex-shrink:0;margin-top:1px">${icon('shield')}</span><span>${s}</span></li>`).join('')}</ul>`;
+
+const ENT=[
+  {t:"企业标准版",d:"企业管理后台、SSO 登录、积分管理、成员管理——满足企业安全合规、权限分层、用量可控的基础需求。"},
+  {t:"企业旗舰版（14 大类管控）",d:"用户管理、身份认证（8 种 SSO）、用户同步（7 种）、个性化配置、组织管理、安全管控、模型管理、AI 资产管理、客户端管理、订阅与用量、数据统计、日志审计、开放平台、阿里云控制台。"},
+  {t:"开放平台 / 开发者",d:"企业邮箱配置、应用授权、开发者文档；支持通过 API 配置管理后台（用户/组织/安全/模型/AI资产/限额/统计/开放平台等全量接口）。"},
+  {t:"私有化 / 私网",d:"企业旗舰版支持 PrivateLink 私网链接设置，满足高合规与数据隔离诉求。"},
+];
+document.getElementById('ent').innerHTML=ENT.map((e,i)=>`<div class="card reveal" style="transition-delay:${i*50}ms"><h3 style="font-size:15.5px;font-weight:850;margin-bottom:8px">${e.t}</h3><p style="font-size:13px;color:var(--ink2);line-height:1.75">${e.d}</p></div>`).join('');
+
+requestAnimationFrame(()=>document.querySelectorAll('.reveal').forEach(el=>el.classList.add('in')));
+</script>
+</body>
+</html>

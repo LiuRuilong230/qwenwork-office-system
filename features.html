@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>功能详情 & 使用帮助 | 千问办公全量系统</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div id="topbar-slot"></div>
+<nav class="sidenav" id="sidenav"></nav>
+<div class="main">
+  <div class="page">
+    <div class="pagehead">
+      <div class="eyebrow">DOCS · 功能详情 & 使用帮助</div>
+      <h1>官方帮助中心 · 全量文档库</h1>
+      <p>抓取自 qwenwork.cn/docs 官方帮助中心，<b>250 篇全文 / 10 大分类</b>：千问办公简介、入门指南（含安装）、产品权益、核心能力（网页端 / 桌面端 / 功能 / 工作台）、企业标准版能力、企业旗舰版能力（69 篇管控：身份认证 / 用户同步 / 安全管控 / 模型管理 / AI 资产 / 审计日志 / 开放平台等）、开发者手册（140 篇 API）、问题反馈、常见问题、官方公告。左侧目录树可折叠、可筛选，点击任一篇阅读全文。</p>
+    </div>
+    <div class="docwrap">
+      <aside class="doctoc" id="doctoc">
+        <div class="toc-bar">
+          <div class="toc-search"><span class="si">⌕</span><input id="tocq" type="text" placeholder="筛选文档…" autocomplete="off"></div>
+          <div class="toc-meta"><span id="tocCount"></span><span id="tocHint">点击展开/折叠</span></div>
+        </div>
+        <div class="dtree" id="dtree"></div>
+      </aside>
+      <article class="docbody" id="docbody"></article>
+    </div>
+  </div>
+</div>
+<script src="assets/data.js"></script>
+<script src="assets/official-docs.js"></script>
+<script src="assets/app.js"></script>
+<script>
+initShell('features');
+const ONAV = window.OFFICIAL_NAV || [];
+const DOCS = window.OFFICIAL_DOCS || {};
+const esc = s => (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+// ===== 扁平导航 -> 嵌套树（按 depth），并登记 uid/parent =====
+let UID = 0;
+const byUid = {}, parentOf = {}, nodeByHref = {};
+function buildTree(flat){
+  const root = {uid:'root', depth:-1, kids:[]};
+  const stack = [root];
+  flat.forEach(n=>{
+    const node = {uid:'n'+(UID++), depth:n.depth, type:n.type, href:n.href||'', label:n.label||'', kids:[]};
+    while(stack.length && stack[stack.length-1].depth >= node.depth) stack.pop();
+    const parent = stack[stack.length-1] || root;
+    parent.kids.push(node);
+    byUid[node.uid] = node; parentOf[node.uid] = parent.uid;
+    if(node.href) nodeByHref[node.href] = node;
+    stack.push(node);
+  });
+  return root.kids;
+}
+function countDocs(node){
+  if(node.type==='document' && node.href) { let c=1; node.kids.forEach(k=>c+=countDocs(k)); return c; }
+  let c=0; node.kids.forEach(k=>c+=countDocs(k)); return c;
+}
+const TREE = buildTree(ONAV);
+
+// ===== 渲染树 =====
+function renderNodes(nodes){
+  let h='';
+  nodes.forEach(n=>{
+    const hasKids = n.kids.length>0;
+    const cls = hasKids ? 'dt-folder' : 'dt-leaf';
+    h += `<div class="${cls}" data-uid="${n.uid}" data-href="${esc(n.href)}" data-label="${esc(n.label)}">`;
+    h += `<div class="dt-row">`;
+    h += hasKids ? `<span class="dt-tog">▶</span>` : `<span class="dt-spacer"></span>`;
+    h += `<span class="dt-ic">${hasKids?icon('folder'):icon('docs')}</span><span class="dt-lab">${esc(n.label)}</span>`;
+    if(hasKids) h += `<span class="dt-count">${countDocs(n)}</span>`;
+    h += `</div>`;
+    if(hasKids){ h += `<div class="dt-kids">${renderNodes(n.kids)}</div>`; }
+    h += `</div>`;
+  });
+  return h;
+}
+const treeEl = document.getElementById('dtree');
+treeEl.innerHTML = renderNodes(TREE);
+document.getElementById('tocCount').textContent = `共 ${Object.keys(DOCS).length} 篇 · ${ONAV.filter(n=>n.type==='folder').length} 分类`;
+
+// ===== 展开某 uid 的所有祖先 =====
+function openAncestors(uid){
+  let p = parentOf[uid];
+  while(p && p!=='root'){
+    const el = treeEl.querySelector(`.dt-folder[data-uid="${p}"]`);
+    if(el) el.classList.add('open');
+    p = parentOf[p];
+  }
+}
+// ===== 加载文档 =====
+let curSlug = '';
+function go(slug, skipHash){
+  let d = DOCS[slug];
+  if(!d){ // 容错：找第一个有正文的
+    const first = ONAV.find(n=>n.type==='document' && DOCS[n.href]);
+    if(!first) return; slug = first.href; d = DOCS[slug];
+  }
+  curSlug = slug;
+  // 正文
+  const body = document.getElementById('docbody');
+  body.innerHTML = `<h1 class="doc-h">${esc(d.title||d.fulltitle||slug)}</h1><div class="prose">${d.html||'<div class="empty">该页暂无正文</div>'}</div>`;
+  body.scrollTop = 0; window.scrollTo({top:0, behavior:'smooth'});
+  // 高亮 + 展开
+  treeEl.querySelectorAll('.dt-leaf.on,.dt-folder.on').forEach(e=>e.classList.remove('on'));
+  const node = nodeByHref[slug];
+  if(node){
+    const el = treeEl.querySelector(`[data-uid="${node.uid}"]`);
+    if(el){ el.classList.add('on'); openAncestors(node.uid); el.scrollIntoView({block:'nearest'}); }
+  }
+  if(!skipHash) history.replaceState(null,'','#'+slug);
+}
+// ===== 点击交互 =====
+treeEl.addEventListener('click', e=>{
+  const tog = e.target.closest('.dt-tog');
+  const row = e.target.closest('.dt-row');
+  if(!row) return;
+  const wrap = row.parentElement;
+  const href = wrap.dataset.href;
+  if(tog){ // 点三角：只折叠/展开
+    wrap.classList.toggle('open'); e.stopPropagation(); return;
+  }
+  if(href && DOCS[href]){ go(href); }
+  else if(wrap.classList.contains('dt-folder')){ wrap.classList.toggle('open'); }
+});
+// ===== 树内筛选 =====
+const tocq = document.getElementById('tocq');
+function matches(node, q){
+  if((node.label||'').toLowerCase().includes(q)) return true;
+  return node.kids.some(k=>matches(k,q));
+}
+function filterTree(q){
+  const all = treeEl.querySelectorAll('.dt-folder,.dt-leaf');
+  if(!q){ all.forEach(el=>{ el.classList.remove('dt-hidden','dt-hit'); }); return; }
+  q = q.toLowerCase();
+  // 自底向上：叶子先判定，文件夹看后代
+  function walk(uid){
+    const node = byUid[uid]; if(!node) return false;
+    const el = treeEl.querySelector(`[data-uid="${uid}"]`);
+    let selfHit = (node.label||'').toLowerCase().includes(q);
+    let kidHit = false;
+    node.kids.forEach(k=>{ if(walk(k.uid)) kidHit = true; });
+    const show = selfHit || kidHit;
+    if(el){
+      el.classList.toggle('dt-hidden', !show);
+      el.classList.toggle('dt-hit', selfHit);
+      if(el.classList.contains('dt-folder')) el.classList.toggle('open', show);
+    }
+    return show;
+  }
+  TREE.forEach(n=>walk(n.uid));
+}
+tocq.addEventListener('input', ()=>filterTree(tocq.value.trim()));
+
+// ===== 初始 =====
+let init = decodeURIComponent(location.hash.slice(1));
+if(!DOCS[init]) init = 'product-introduction';
+go(init, true);
+// 默认展开顶层分类，便于浏览
+TREE.forEach(n=>{ const el=treeEl.querySelector(`.dt-folder[data-uid="${n.uid}"]`); if(el) el.classList.add('open'); });
+</script>
+</body>
+</html>

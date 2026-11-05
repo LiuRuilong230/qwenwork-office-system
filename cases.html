@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>案例库 | 千问办公全量系统</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div id="topbar-slot"></div>
+<nav class="sidenav" id="sidenav"></nav>
+<div class="main">
+  <div class="page">
+    <div class="pagehead">
+      <div class="eyebrow">CASES · 案例库</div>
+      <h1>实战案例库</h1>
+      <p>千问办公官方实战案例 51 个（同步自 usecase.qwenwork.host），含完整提示词、产物链接与演示视频。点击案例查看详情、复制提示词、一键做同款。下方另附钉钉知识库标杆客户最佳实践。</p>
+    </div>
+
+    <div class="filters" id="filters"></div>
+    <div class="sec-title"><span class="bar"></span>官方实战案例<span class="cnt" id="cnt"></span></div>
+    <div class="grid g3" id="grid"></div>
+
+    <div class="sec-title"><span class="bar"></span>标杆客户最佳实践<span class="cnt">来自钉钉知识库</span></div>
+    <div class="grid g2" id="bench"></div>
+
+    <div class="note" style="margin-top:22px"><b>说明：</b>案例封面/视频指向官方源站，需联网加载。标杆客户最佳实践全文（含销售三分钟逐字稿、最佳实践文档/PPT/HTML）存于钉钉知识库「标杆案例」，全量版将逐行业接入。</div>
+  </div>
+</div>
+<script src="assets/data.js"></script>
+<script src="assets/cases-data.js"></script>
+<script src="assets/app.js"></script>
+<script>
+initShell('cases');
+const MEDIA_BASE="https://usecase.qwenwork.host";
+const CASES=(typeof QW_CASES!=='undefined'?QW_CASES:[]), TASKS=(typeof QW_TASKS!=='undefined'?QW_TASKS:[]);
+const ROLES=[...new Set(CASES.flatMap(c=>c.roles||[]))];
+const state={task:new Set(),role:new Set(),q:''};
+
+function renderFilters(){
+  let h=`<div class="frow"><div class="fl">搜索</div><div class="chips" style="flex:1"><input id="cq" placeholder="搜索案例 / 产物 / 描述…" style="width:100%;height:34px;border:1px solid var(--line);border-radius:10px;padding:0 12px;font-size:13px;outline:none" value="${state.q}"></div></div>`;
+  const tl=TASKS.map(t=>({t,n:CASES.filter(c=>(c.tasks||[]).includes(t)).length})).filter(x=>x.n>0).sort((a,b)=>b.n-a.n);
+  h+=`<div class="frow"><div class="fl">任务类型</div><div class="chips"><span class="chip ${state.task.size===0?'on':''}" data-dim="task" data-val="__all__">全部</span>${tl.map(x=>`<span class="chip ${state.task.has(x.t)?'on':''}" data-dim="task" data-val="${x.t}">${x.t}<span class="n">${x.n}</span></span>`).join('')}</div></div>`;
+  const rl=ROLES.map(r=>({r,n:CASES.filter(c=>(c.roles||[]).includes(r)).length})).sort((a,b)=>b.n-a.n);
+  h+=`<div class="frow"><div class="fl">岗位</div><div class="chips"><span class="chip ${state.role.size===0?'on':''}" data-dim="role" data-val="__all__">全部</span>${rl.map(x=>`<span class="chip ${state.role.has(x.r)?'on':''}" data-dim="role" data-val="${x.r}">${x.r}<span class="n">${x.n}</span></span>`).join('')}</div></div>`;
+  h+=`<div style="display:flex;justify-content:flex-end"><span class="freset" id="reset">${icon('refresh')}清空筛选</span></div>`;
+  document.getElementById('filters').innerHTML=h;
+  const q=document.getElementById('cq');
+  q.addEventListener('input',()=>{state.q=q.value.trim().toLowerCase();renderGrid();});
+}
+function match(c){
+  if(state.task.size&&!(c.tasks||[]).some(t=>state.task.has(t)))return false;
+  if(state.role.size&&!(c.roles||[]).some(r=>state.role.has(r)))return false;
+  if(state.q){const s=(c.title+c.desc+(c.out||'')+(c.tasks||[]).join('')+(c.roles||[]).join('')).toLowerCase();if(!s.includes(state.q))return false;}
+  return true;
+}
+function cover(c){ if(!c.cover)return ''; return c.cover.startsWith('/')?MEDIA_BASE+c.cover:c.cover; }
+function renderGrid(){
+  const list=CASES.filter(match);
+  document.getElementById('cnt').textContent=`共 ${list.length} 个案例`;
+  const g=document.getElementById('grid');
+  if(!list.length){g.innerHTML=`<div class="empty">没有匹配的案例，试试其他条件。</div>`;return;}
+  g.innerHTML=list.map((c,i)=>`
+    <div class="case reveal" data-id="${c.id}" style="transition-delay:${Math.min(i*20,300)}ms">
+      <div class="cc">${cover(c)?`<img src="${cover(c)}" loading="lazy" onerror="this.style.display='none';this.parentNode.innerHTML+='<span class=ph>❖</span>'">`:`<span class="ph">❖</span>`}${c.hasVideo?`<span class="vid">${icon('play')}视频</span>`:''}</div>
+      <div class="cb"><h3>${c.title}</h3><div class="cd">${c.desc||c.short||''}</div>
+        <div class="tags">${(c.roles||[]).slice(0,3).map(r=>`<span class="tag gy">${r}</span>`).join('')}${(c.tasks||[]).slice(0,2).map(t=>`<span class="tag cy">${t}</span>`).join('')}</div>
+      </div></div>`).join('');
+  requestAnimationFrame(()=>g.querySelectorAll('.reveal').forEach(el=>el.classList.add('in')));
+  g.querySelectorAll('.case').forEach(el=>el.addEventListener('click',()=>openCase(el.dataset.id)));
+}
+function openCase(id){
+  const c=CASES.find(x=>x.id===id); if(!c)return;
+  const o=resolveOut(c.out); const out=o.url;
+  const vid=(window.resolveVideo?resolveVideo(c):(c.video?(c.video.startsWith('/')?MEDIA_BASE+c.video:c.video):''));
+  const cv=cover(c);
+  // 媒体区：有视频→内嵌播放器；否则有封面→图片
+  const mediaHtml = vid
+    ? `<div class="msec"><div class="mh"><span class="mi">${icon('play')}</span>演示视频</div>
+       <video controls preload="metadata" playsinline ${cv?`poster="${cv}"`:''} src="${vid}" onerror="this.closest('.msec').style.display='none'"></video>
+       <div style="margin-top:9px;font-size:12px;color:var(--ink3)">视频源自官方案例库，需联网加载。
+         <a href="${vid}" target="_blank" rel="noopener" style="color:var(--brand-deep);font-weight:700">在新标签打开 / 下载 ↗</a></div></div>`
+    : (cv ? `<div class="msec"><div class="mh"><span class="mi">${icon('image')}</span>产物预览</div><img src="${cv}" style="border-radius:12px;box-shadow:var(--sh1);max-width:100%;height:auto" onerror="this.parentNode.style.display='none'"></div>` : '');
+  openModal(`
+    <div class="modal-h"><button class="modal-x" data-close>${icon('x')}</button>
+      <div class="eyebrow">官方实战案例</div><h2>${c.title}</h2>
+      <div class="tags">${(c.roles||[]).map(r=>`<span class="tag">${r}</span>`).join('')}${(c.tasks||[]).map(t=>`<span class="tag">${t}</span>`).join('')}</div></div>
+    <div class="modal-b">
+      ${c.desc?`<div class="msec"><div class="mh"><span class="mi">${icon('docs')}</span>案例描述</div><p>${c.desc}</p></div>`:''}
+      ${mediaHtml}
+      <div class="msec"><div class="mh"><span class="mi">${icon('edit')}</span>完整提示词（可复制）</div>
+        <div class="prompt-box"><button class="copybtn" id="cpBtn">复制</button><div class="pl">◈ PROMPT</div><pre id="pp">${(c.prompt||'').replace(/</g,'&lt;')}</pre></div></div>
+      ${c.skill?`<div class="msec"><div class="mh"><span class="mi">${icon('sparkles')}</span>使用技能</div><p>${c.skill}</p></div>`:''}
+    </div>
+    <div class="modal-f">
+      ${c.make_url?`<a class="btn pri sm" href="${c.make_url}" target="_blank" rel="noopener">${icon('zap')}一键做同款</a>`:''}
+      ${out?`<a class="btn gho sm" href="${out}" target="_blank" rel="noopener">${icon('link')}打开作品</a>`:(vid?`<a class="btn gho sm" href="${vid}" target="_blank" rel="noopener" download>${icon('download')}下载视频</a>`:(o.label&&!o.dead?`<span class="btn gho sm" style="cursor:default;opacity:.75" title="该产物为文件，需在千问办公内做同款获取">${icon('docs')}产物文件</span>`:''))}
+      <span class="sp" style="font-size:11px;color:var(--ink3)">产物：${o.label?o.label+(o.dead?'（原链接已失效）':''):'—'}</span>
+    </div>`);
+  const btn=document.getElementById('cpBtn'); if(btn)btn.addEventListener('click',()=>copyText(c.prompt||'',btn));
+}
+
+const BENCH=[
+  {ind:"制造 · 能源",t:"苏州光线能源：30天炼成数字员工",d:"3000 元投入撬动年省 30 万。建筑工程与新能源复合型企业，用千问办公承接报表汇总、数据核对等重复事务，30 天落地数字员工。",roi:"年省 30 万"},
+  {ind:"法律",t:"泽大律所：百页合同分钟审完",d:"让 AI 成为律师的合伙人——百页合同分钟级审查，条款抽取、风险标注、类案检索、文书起草一站式。",roi:"百页→分钟"},
+];
+document.getElementById('bench').innerHTML=BENCH.map((b,i)=>`
+  <div class="card reveal" style="transition-delay:${i*60}ms;position:relative;overflow:hidden">
+    <span class="tag gd">${b.ind}</span>
+    <h3 style="font-size:17px;font-weight:850;margin:10px 0 8px">${b.t}</h3>
+    <p style="font-size:13px;color:var(--ink2);line-height:1.7">${b.d}</p>
+    <div style="margin-top:14px;display:flex;align-items:center;gap:10px">
+      <span style="font-size:22px;font-weight:900;color:var(--brand-deep)">${b.roi}</span>
+      <span style="font-size:11px;color:var(--ink3)">关键成效</span>
+    </div>
+  </div>`).join('');
+
+document.getElementById('filters').addEventListener('click',e=>{
+  const chip=e.target.closest('.chip');
+  if(chip){const{dim,val}=chip.dataset;if(val==='__all__')state[dim].clear();else state[dim].has(val)?state[dim].delete(val):state[dim].add(val);renderFilters();renderGrid();return;}
+  if(e.target.closest('#reset')){state.task.clear();state.role.clear();state.q='';renderFilters();renderGrid();}
+});
+renderFilters();renderGrid();
+requestAnimationFrame(()=>document.querySelectorAll('#bench .reveal').forEach(el=>el.classList.add('in')));
+if(location.hash){const id=location.hash.slice(1);if(CASES.find(c=>c.id===id))setTimeout(()=>openCase(id),150);}
+</script>
+</body>
+</html>

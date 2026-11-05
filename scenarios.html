@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>应用场景 | 千问办公全量系统</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div id="topbar-slot"></div>
+<nav class="sidenav" id="sidenav"></nav>
+<div class="main">
+  <div class="page">
+    <div class="pagehead">
+      <div class="eyebrow">SCENARIOS · 应用场景</div>
+      <h1>应用场景矩阵</h1>
+      <p>覆盖各行业、各岗位、各场景。全部场景派生自千问办公官方实战案例库（51 个真实案例）与官方行业场景文档，按「行业 × 岗位 × 场景类型」三维组织。<b>点击任意场景卡查看详情、使用方法与可直接复制的真实提示词。</b></p>
+    </div>
+
+    <div class="filters" id="filters"></div>
+    <div class="sec-title"><span class="bar"></span>场景清单<span class="cnt" id="cnt"></span></div>
+    <div class="scn-grid" id="grid"></div>
+
+    <div class="note gr" style="margin-top:22px"><b>覆盖说明：</b>当前收录 50 个高频场景，覆盖 15 个行业。官方七大行业场景全文（电商 / 闪购 / 营销 / 咨询 / 教育 / 零售 / 餐饮）见「功能详情 & 帮助」页；更多行业（医疗、政务、物流、建筑等）持续补充中。</div>
+  </div>
+</div>
+<script src="assets/data.js"></script>
+<script src="assets/cases-data.js"></script>
+<script src="assets/app.js"></script>
+<script>
+initShell('scenarios');
+const MEDIA_BASE="https://usecase.qwenwork.host";
+const state={ind:new Set(),role:new Set(),task:new Set()};
+
+(function(){const p=new URLSearchParams(location.search);
+  if(p.get('ind'))state.ind.add(p.get('ind'));
+  if(p.get('role'))state.role.add(p.get('role'));
+  if(p.get('task'))state.task.add(p.get('task'));})();
+
+function countFor(dim,val){return SCENARIOS.filter(s=>dim==='ind'?s.ind===val:dim==='role'?s.roles.includes(val):s.tasks.includes(val)).length;}
+
+function renderFilters(){
+  const rows=[{k:'ind',label:'行业',vals:DIMS.ind},{k:'role',label:'岗位',vals:DIMS.role},{k:'task',label:'场景类型',vals:DIMS.task}];
+  let h='';
+  rows.forEach(r=>{
+    const list=r.vals.map(v=>({v,n:countFor(r.k,v)})).filter(x=>x.n>0).sort((a,b)=>b.n-a.n);
+    h+=`<div class="frow"><div class="fl">${r.label}</div><div class="chips"><span class="chip ${state[r.k].size===0?'on':''}" data-dim="${r.k}" data-val="__all__">全部</span>`;
+    list.forEach(x=>{h+=`<span class="chip ${state[r.k].has(x.v)?'on':''}" data-dim="${r.k}" data-val="${x.v}">${x.v}<span class="n">${x.n}</span></span>`;});
+    h+=`</div></div>`;
+  });
+  h+=`<div style="display:flex;justify-content:flex-end"><span class="freset" id="reset">${icon('refresh')}清空全部筛选</span></div>`;
+  document.getElementById('filters').innerHTML=h;
+}
+function match(s){
+  if(state.ind.size&&!state.ind.has(s.ind))return false;
+  if(state.role.size&&!s.roles.some(r=>state.role.has(r)))return false;
+  if(state.task.size&&!s.tasks.some(t=>state.task.has(t)))return false;
+  return true;
+}
+function renderGrid(){
+  const list=SCENARIOS.filter(match);
+  const filtered=(state.ind.size||state.role.size||state.task.size);
+  document.getElementById('cnt').textContent=`共 ${list.length} 个场景`+(filtered?'（已筛选）':'');
+  const grid=document.getElementById('grid');
+  if(!list.length){grid.innerHTML=`<div class="empty">没有匹配的场景，试试减少筛选条件。</div>`;return;}
+  grid.innerHTML=list.map((s,i)=>`
+    <div class="scn fade-in" data-i="${SCENARIOS.indexOf(s)}" style="animation-delay:${Math.min(i*22,400)}ms">
+      <div class="ghost">${String(i+1).padStart(2,'0')}</div>
+      <h3>${s.t}</h3>
+      <div class="pain">痛点：${s.pain}</div>
+      <div class="sol">${s.sol}</div>
+      <div class="out"><span class="dot"></span>产物：${s.out}</div>
+      <div class="tags"><span class="tag">${s.ind}</span>${s.roles.slice(0,3).map(r=>`<span class="tag gy">${r}</span>`).join('')}${s.tasks.slice(0,2).map(t=>`<span class="tag cy">${t}</span>`).join('')}</div>
+      <div class="open">查看场景详情 ›</div>
+    </div>`).join('');
+}
+
+// 匹配真实案例（取 prompt / 产物 / 一键做同款）
+function findCase(s){
+  if(typeof QW_CASES==='undefined')return null;
+  let c=QW_CASES.find(x=>x.title===s.cs);
+  if(!c)c=QW_CASES.find(x=>x.title.includes(s.cs)||s.cs.includes(x.title));
+  if(!c){const kw=s.cs.replace(/[（(].*?[)）]/g,'').slice(0,4);c=QW_CASES.find(x=>x.title.includes(kw));}
+  return c||null;
+}
+function howSteps(s){
+  return [
+    {t:`<b>打开千问办公</b>：钉钉工作台内唤起，或网页端 qwenwork.cn/app，或桌面端。新建一个任务。`},
+    {t:`<b>说清需求</b>：把背景、目标、产物形态（${s.out}）一次讲清，可直接复制下方「建议提示词」。`},
+    {t:`<b>追问迭代</b>：对结果不满意就继续追问——调整口径、补充数据、改版式，AI 在同一任务里持续优化。`},
+    {t:`<b>导出 / 发布</b>：网页可一键发布上线，文档表格可下载，重复任务可设为云端定时任务自动跑。`},
+  ];
+}
+function mediaUrl(u){ return u ? (u.startsWith('/') ? MEDIA_BASE+u : u) : ''; }
+function openScn(i){
+  const s=SCENARIOS[i], c=findCase(s);
+  // 提示词：优先官方案例，其次场景自带（标杆客户），最后兜底
+  const prompt=(c&&c.prompt)?c.prompt:(s.prompt||'（该场景的完整提示词可在千问办公 App 内「做同款」获取，或参考下方使用方法自行描述需求。）');
+  const makeUrl=(c&&c.make_url)?c.make_url:(s.make_url||'https://qwenwork.cn/app');
+  const o=resolveOut(c&&c.out); const outUrl=o.url;
+  const cover=mediaUrl(c&&c.cover);
+  const vid=(c&&window.resolveVideo)?resolveVideo(c):mediaUrl(c&&c.video);
+  // 媒体区：有视频→内嵌播放器；否则有封面→图片；都没有→不渲染
+  let mediaHtml='';
+  if(vid){
+    mediaHtml=`<div class="msec"><div class="mh"><span class="mi">${icon('play')}</span>案例演示视频</div>
+      <video controls preload="metadata" playsinline ${cover?`poster="${cover}"`:''} src="${vid}" onerror="this.closest('.msec').style.display='none'"></video>
+      <div style="margin-top:9px;font-size:12px;color:var(--ink3)">视频源自官方案例库，需联网加载。
+        <a href="${vid}" target="_blank" rel="noopener" style="color:var(--brand-deep);font-weight:700">在新标签打开 / 下载 ↗</a></div></div>`;
+  }else if(cover){
+    mediaHtml=`<div class="msec"><div class="mh"><span class="mi">${icon('image')}</span>案例产物预览</div>
+      <img src="${cover}" alt="${s.t}" style="border-radius:12px;box-shadow:var(--sh1);max-width:100%;height:auto" onerror="this.parentNode.style.display='none'"></div>`;
+  }
+  // 产物按钮：活链接→可点打开；裸文件名→展示标签（视频类已在上方播放器可看/下载）
+  let outBtn='';
+  if(outUrl) outBtn=`<a class="btn gho sm" href="${outUrl}" target="_blank" rel="noopener">${icon('link')}查看产物</a>`;
+  else if(vid) outBtn=`<a class="btn gho sm" href="${vid}" target="_blank" rel="noopener" download>${icon('download')}下载视频</a>`;
+  else if(o.label) outBtn=`<span class="btn gho sm" style="cursor:default;opacity:.75" title="该产物为文件，需在千问办公内「做同款」生成后下载">${icon('docs')}产物：${o.label}</span>`;
+  const benchBadge=s.bench?`<span class="tag gd" style="margin-left:6px">标杆客户 · ${s.roi||''}</span>`:'';
+  openModal(`
+    <div class="modal-h">
+      <button class="modal-x" data-close>${icon('x')}</button>
+      <div class="eyebrow">${s.ind} · 应用场景${benchBadge}</div>
+      <h2>${s.t}</h2>
+      <div class="tags">${s.roles.map(r=>`<span class="tag">${r}</span>`).join('')}${s.tasks.map(t=>`<span class="tag">${t}</span>`).join('')}</div>
+    </div>
+    <div class="modal-b">
+      <div class="msec"><div class="mh"><span class="mi">${icon('docs')}</span>场景介绍</div>
+        <p><b style="color:var(--ink)">业务痛点：</b>${s.pain}</p>
+        <p style="margin-top:8px"><b style="color:var(--ink)">千问办公解法：</b>${s.sol}</p>
+        <p style="margin-top:8px"><b style="color:var(--ink)">产物形态：</b>${s.out}</p>
+      </div>
+      ${mediaHtml}
+      <div class="msec"><div class="mh"><span class="mi">${icon('sliders')}</span>如何使用（四步）</div>
+        <div class="steps">${howSteps(s).map(x=>`<div class="step"><span class="no"></span><span class="st">${x.t}</span></div>`).join('')}</div>
+      </div>
+      <div class="msec"><div class="mh"><span class="mi">${icon('edit')}</span>建议提示词（真实案例 Prompt，可直接复制）</div>
+        <div class="prompt-box"><button class="copybtn" id="cpBtn">复制</button><div class="pl">◈ PROMPT</div><pre id="pp">${prompt.replace(/</g,'&lt;')}</pre></div>
+      </div>
+      ${c?`<div class="msec"><div class="mh"><span class="mi">${icon('briefcase')}</span>关联官方案例</div><p>${c.title}${c.desc?' —— '+c.desc:''}</p></div>`:''}
+      ${(!c&&s.benchNote)?`<div class="msec"><div class="mh"><span class="mi">${icon('briefcase')}</span>标杆客户最佳实践</div><p>${s.benchNote}</p></div>`:''}
+    </div>
+    <div class="modal-f">
+      <a class="btn pri sm" href="${makeUrl}" target="_blank" rel="noopener">${icon('zap')}一键做同款</a>
+      ${outBtn}
+      <a class="btn gho sm" href="cases.html">${icon('briefcase')}更多案例</a>
+      <span class="sp" style="font-size:11px;color:var(--ink3)">${c?'提示词来自官方实战案例库':'提示词依据标杆客户实践整理'}</span>
+    </div>`);
+  const btn=document.getElementById('cpBtn');
+  if(btn)btn.addEventListener('click',()=>copyText(prompt,btn));
+}
+
+document.getElementById('grid').addEventListener('click',e=>{const card=e.target.closest('.scn');if(card)openScn(+card.dataset.i);});
+document.getElementById('filters').addEventListener('click',e=>{
+  const chip=e.target.closest('.chip');
+  if(chip){const{dim,val}=chip.dataset;if(val==='__all__')state[dim].clear();else state[dim].has(val)?state[dim].delete(val):state[dim].add(val);renderFilters();renderGrid();return;}
+  if(e.target.closest('#reset')){state.ind.clear();state.role.clear();state.task.clear();renderFilters();renderGrid();}
+});
+
+renderFilters();renderGrid();
+// 深链：?s=场景标题 自动打开
+(function(){const p=new URLSearchParams(location.search);const q=p.get('s');
+  if(q){const i=SCENARIOS.findIndex(x=>x.t===q||x.cs===q);if(i>=0)setTimeout(()=>openScn(i),120);}
+  if(location.hash){const t=decodeURIComponent(location.hash.slice(1));const i=SCENARIOS.findIndex(x=>x.t===t||x.cs===t);if(i>=0)setTimeout(()=>openScn(i),120);}})();
+</script>
+</body>
+</html>

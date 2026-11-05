@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>千问办公学院 | 千问办公全量系统</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div id="topbar-slot"></div>
+<nav class="sidenav" id="sidenav"></nav>
+<div class="main">
+  <div class="page">
+    <div class="pagehead">
+      <div class="eyebrow">ACADEMY · 千问办公学院</div>
+      <h1>千问办公学院</h1>
+      <p>一站式学习成长中心，内容同步自官方学院 <b>learn.qwenwork.cn</b>：视频课程、直播课堂、使用指南、最新功能、上新公告、学习路径。点击任意卡片查看详情与观看入口。<span style="color:var(--ink3)">（注：官方学院的「真实案例」见本系统「案例库」模块；「使用指南」为学院自有教程，与「功能详情&帮助」的 docs.qwenwork.cn 官方文档分属不同来源，互不重复。）</span></p>
+    </div>
+
+    <div id="newsBanner"></div>
+
+    <div class="sec-title"><span class="bar"></span>学习内容<span class="cnt">视频课程 / 直播课堂 / 使用指南 / 最新功能 / 学习路径</span></div>
+    <div class="tabs lm-tabs" id="tabs">
+      <div class="tab on" data-t="course">视频课程</div>
+      <div class="tab" data-t="live">直播课堂</div>
+      <div class="tab" data-t="guide">使用指南</div>
+      <div class="tab" data-t="update">最新功能</div>
+      <div class="tab" data-t="path">学习路径</div>
+    </div>
+    <div id="panel"></div>
+
+    <div class="note gr" style="margin-top:22px"><b>来源：</b>学院内容同步自官方 <b>learn.qwenwork.cn</b>（<span id="srcCount">…</span>）。使用指南已按原站完整抓取 <b>30 篇 / 4 大分类</b>（新手入门 · 核心功能[基础必备/进阶能力/企业能力] · 常见任务 · 场景实战），每篇保留官方原文的图文步骤、演示视频与产物下载，媒体走官方源站需联网加载。</div>
+  </div>
+</div>
+<script src="assets/data.js"></script>
+<script src="assets/learn-content.js"></script>
+<script src="assets/guide-content.js"></script>
+<script src="assets/manual-content.js"></script>
+<script src="assets/app.js"></script>
+<script>
+initShell('academy');
+const SC=(typeof siteContent!=='undefined'?siteContent:{});
+const COURSES=SC.courses||[], UPDATES=SC.updates||[];
+// 使用指南：优先用全量抓取的 ALL_GUIDES（30 篇 / 4 大分类，含原文图文视频），回退旧 siteContent.guides
+const GUIDES=(typeof ALL_GUIDES!=='undefined'&&ALL_GUIDES.length)?ALL_GUIDES:(SC.guides||[]);
+const LEARN_BASE="https://learn.qwenwork.cn/";
+const PATHS=[
+  {level:"入门",title:"零基础入门",items:["说清任务与要求","完成第一份初稿","通过追问改进结果"]},
+  {level:"进阶",title:"日常提效",items:["组织信息与表达","分析数据与材料","核验结论与来源"]},
+  {level:"高阶",title:"进阶工作流",items:["拆解复杂任务","设置复核节点","沉淀模板与流程"]},
+];
+function img(u){ if(!u)return ''; if(/^https?:/.test(u))return u; if(u.indexOf('local:')===0)return u.slice(6); return u.startsWith('/')?LEARN_BASE.replace(/\/$/,'')+u:LEARN_BASE+u; }
+function esc(s){ return (s||'').replace(/</g,'&lt;'); }
+
+const KIND_IC={"视频课":"video","直播回放":"live","实战短片":"zap","demo":"flask","process":"refresh"};
+function courseCard(c,i){
+  const cover=img(c.image);
+  const fic=icon(KIND_IC[c.kind]||'cap');
+  const ficA=fic.replace(/"/g,'&quot;');
+  return `<div class="course reveal" data-i="${i}" style="transition-delay:${(i%12)*30}ms">
+    <div class="cov">${cover?`<img src="${cover}" style="width:100%;height:100%;object-fit:cover" onerror="this.outerHTML='<span class=em>${ficA}</span>'">`:`<span class="em">${fic}</span>`}
+      <span class="kind">${c.kind||'课程'}</span>${c.episode?`<span class="ep">${c.episode}</span>`:''}</div>
+    <div class="cb"><h3>${c.shortTitle||c.title}</h3><div class="cd">${esc(c.desc)||''}</div>
+      <div class="cm"><span class="lv">${c.level||'通用'}</span><span>${c.category||''}</span>${c.clicks?`<span class="ic-inline" style="margin-left:auto">${icon('flame')}${(c.clicks/1000).toFixed(1)}k</span>`:''}</div>
+    </div></div>`;
+}
+function guideCard(g,i){
+  const ic = g.cat==='场景实战' ? 'store'
+           : g.cat==='常见任务' ? 'wrench'
+           : g.cat==='常见问题' ? 'help'
+           : g.sub==='企业能力' ? 'building'
+           : g.sub==='进阶能力' ? 'layers'
+           : g.sub==='基础必备' ? 'sliders' : 'book';
+  return `<div class="cap reveal gcard" data-g="${i}" style="cursor:pointer;transition-delay:${(i%12)*25}ms">
+    <div class="ci">${icon(ic)}</div>
+    <h3>${esc(g.short||g.title)}</h3>
+    <p>${esc(g.desc||'').slice(0,66)}</p>
+    <div class="gcard-go">查看指南 →</div></div>`;
+}
+// 使用指南：按原站 4 大分类（核心功能再分 基础必备/进阶能力/企业能力）分组展示全部指南
+function renderGuideGroups(){
+  const order=[], byCat={};
+  GUIDES.forEach((g,i)=>{
+    const cat=g.cat||'其他';
+    if(!byCat[cat]){ byCat[cat]={n:0,subOrder:[],bySub:{}}; order.push(cat); }
+    const c=byCat[cat]; c.n++;
+    const sk=g.sub||'';
+    if(!c.bySub[sk]){ c.bySub[sk]=[]; c.subOrder.push(sk); }
+    c.bySub[sk].push({g,i});
+  });
+  return order.map(cat=>{
+    const c=byCat[cat];
+    const inner=c.subOrder.map(sk=>{
+      const items=c.bySub[sk];
+      const subHead=sk?`<div class="gs-sub">${esc(sk)}<span>${items.length}</span></div>`:'';
+      return subHead+`<div class="grid g3">${items.map(x=>guideCard(x.g,x.i)).join('')}</div>`;
+    }).join('');
+    return `<div class="guide-sec"><div class="gs-head"><span class="gs-bar"></span>${esc(cat)}<span class="gs-cnt">${c.n} 篇</span></div>${inner}</div>`;
+  }).join('');
+}
+function renderPanel(t){
+  const p=document.getElementById('panel');
+  if(t==='course'){
+    const list=COURSES.map((c,i)=>({c,i})).filter(x=>x.c.kind==='视频课'||x.c.kind==='实战短片');
+    p.innerHTML=`<div class="grid g3">${list.map(x=>courseCard(x.c,x.i)).join('')}</div>`;
+    bindCourses();
+  } else if(t==='live'){
+    const list=COURSES.map((c,i)=>({c,i})).filter(x=>x.c.kind==='直播回放');
+    p.innerHTML=`<div class="grid g3">${list.map(x=>courseCard(x.c,x.i)).join('')}</div>`;
+    bindCourses();
+  } else if(t==='guide'){
+    p.innerHTML=renderGuideGroups();
+    p.querySelectorAll('[data-g]').forEach(el=>el.addEventListener('click',()=>openGuide(+el.dataset.g)));
+  } else if(t==='update'){
+    p.innerHTML=`<div class="tl">${UPDATES.map(u=>`
+      <div class="tli reveal"><div class="td">${u.date||''} · ${u.tag||'更新'}</div><h3>${u.title}</h3><p>${esc(u.desc)||''}</p>
+      ${(u.features||[]).length?`<div style="margin-top:10px;display:flex;flex-direction:column;gap:7px">${u.features.map(f=>`<div style="font-size:12.5px;color:var(--ink2)"><b style="color:var(--brand-deep)">▸ ${esc(f.title)}</b> — ${esc(f.description)||''}</div>`).join('')}</div>`:''}
+      ${u.source?`<a href="${u.source}" target="_blank" style="display:inline-block;margin-top:10px;font-size:12px;color:var(--brand-deep);font-weight:650">阅读原文 ›</a>`:''}
+      </div>`).join('')}</div>`;
+  } else if(t==='path'){
+    p.innerHTML=`<div class="grid g3">${PATHS.map((x,i)=>`<div class="path reveal" style="transition-delay:${i*60}ms"><span class="lv">${x.level}</span><h3>${x.title}</h3><ul>${x.items.map(it=>`<li>${it}</li>`).join('')}</ul></div>`).join('')}</div>
+    <div class="note gr" style="margin-top:18px"><b>学习建议：</b>按「入门 → 进阶 → 高阶」循序渐进。每阶段配合对应视频课程与使用指南实践，最快上手。</div>`;
+  }
+  requestAnimationFrame(()=>p.querySelectorAll('.reveal').forEach(el=>el.classList.add('in')));
+}
+function bindCourses(){ document.querySelectorAll('.course[data-i]').forEach(el=>el.addEventListener('click',()=>openCourse(+el.dataset.i))); }
+
+function openCourse(i){
+  const c=COURSES[i]; if(!c)return;
+  const cover=img(c.image);
+  const vid=c.video||'';
+  openModal(`
+    <div class="modal-h"><button class="modal-x" data-close>${icon('x')}</button>
+      <div class="eyebrow">${c.kind||'课程'} · ${c.category||''} ${c.episode||''}</div>
+      <h2>${c.title}</h2>
+      <div class="tags"><span class="tag">${c.level||'通用'}</span>${c.series?`<span class="tag">${c.series}</span>`:''}</div>
+    </div>
+    <div class="modal-b">
+      ${vid?`<div class="msec"><div class="mh"><span class="mi">${icon('play')}</span>课程演示</div>
+        <video controls playsinline preload="metadata" src="${vid}" style="display:block;width:100%;max-width:640px;aspect-ratio:16/9;object-fit:cover;background:#0d1512;border-radius:14px;box-shadow:var(--sh1)"></video></div>`
+        :(cover?`<img src="${cover}" style="width:100%;border-radius:14px;margin-bottom:18px;box-shadow:var(--sh1)" onerror="this.style.display='none'">`:'')}
+      <div class="msec"><div class="mh"><span class="mi">${icon('docs')}</span>课程介绍</div><p>${esc(c.desc)||''}</p></div>
+      ${c.body?`<div class="msec"><div class="mh"><span class="mi">${icon('edit')}</span>课程要点</div><div class="prose" style="font-size:13.5px">${c.body.split('\n').filter(x=>x.trim()).map(x=>`<p>${esc(x)}</p>`).join('')}</div></div>`:''}
+    </div>
+    <div class="modal-f">
+      ${c.watch?`<a class="btn pri sm" href="${c.watch}" target="_blank">${icon('play')}观看课程</a>`:''}
+      ${c.article?`<a class="btn gho sm" href="${c.article}" target="_blank">${icon('docs')}图文详情</a>`:''}
+      ${c.source?`<a class="btn gho sm" href="${c.source}" target="_blank">${icon('link')}官方来源</a>`:''}
+      <span class="sp" style="font-size:11px;color:var(--ink3)">${c.clicks?'<span class="ic-inline">'+icon('flame')+c.clicks.toLocaleString()+' 次学习</span>':''}</span>
+    </div>`);
+}
+function openCourseById(id){ const i=COURSES.findIndex(c=>c.id===id); if(i>=0){ openCourse(i); return true; } return false; }
+function openGuide(i){
+  const g=GUIDES[i]; if(!g)return;
+  // 指南原文：新结构直接用 g.html（抓取自 learn.qwenwork.cn/docs 全文，含官方 supabase 与 /docs/assets 图文视频）；
+  // 回退旧 guideArticles / manualArticles
+  let art=g.html||((typeof guideArticles!=='undefined'&&guideArticles[g.id])?guideArticles[g.id]:'')
+        ||((typeof manualArticles!=='undefined'&&manualArticles[g.id])?(manualArticles[g.id].html||''):'');
+  art=String(art).replace(/preload="metadata"/g,'preload="auto"'); // 演示视频默认载首帧，避免打开时是空框
+  const intro=g.desc||g.intro||'';
+  const crumb=['使用指南',g.cat,g.sub].filter(Boolean).join(' · ');
+  const courseIdx=g.course?COURSES.findIndex(c=>c.id===g.course):-1;
+  const courseBtn=g.course?(courseIdx>=0
+      ? `<button class="btn gho sm" onclick="openCourseById('${g.course}')">${icon('video')}相关课程</button>`
+      : `<a class="btn gho sm" href="${LEARN_BASE}courses/#${g.course}" target="_blank">${icon('video')}相关课程</a>`)
+    : '';
+  openModal(`
+    <div class="modal-h"><button class="modal-x" data-close>${icon('x')}</button>
+      <div class="eyebrow">${esc(crumb)}</div><h2>${esc(g.title)}</h2>
+      ${(g.cat||g.sub)?`<div class="tags">${g.cat?`<span class="tag">${esc(g.cat)}</span>`:''}${g.sub?`<span class="tag">${esc(g.sub)}</span>`:''}</div>`:''}</div>
+    <div class="modal-b">
+      ${intro?`<div class="msec"><div class="mh"><span class="mi">${icon('docs')}</span>简介</div><p>${esc(intro)}</p></div>`:''}
+      ${art?`<div class="msec"><div class="mh"><span class="mi">${icon('book')}</span>指南全文</div><div class="prose guide-prose">${art}</div></div>`
+        :((g.steps||[]).length?`<div class="msec"><div class="mh"><span class="mi">${icon('sliders')}</span>操作步骤</div><div class="steps">${g.steps.map(s=>{const txt=(typeof s==='string')?s:((s.title||s.t||'')+((s.desc||s.d)?' — '+(s.desc||s.d):''));return `<div class="step"><span class="no"></span><span class="st">${esc(txt)}</span></div>`;}).join('')}</div></div>`:'')}
+      ${g.callout?`<div class="note gr"><b>提示：</b>${esc(typeof g.callout==='string'?g.callout:(g.callout.text||''))}</div>`:''}
+    </div>
+    <div class="modal-f"><a class="btn pri sm" href="${g.source||LEARN_BASE}" target="_blank">${icon('cap')}官方学院 · 完整指南</a>${courseBtn}</div>`);
+}
+
+document.getElementById('tabs').addEventListener('click',e=>{
+  const t=e.target.closest('.tab'); if(!t)return;
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on')); t.classList.add('on');
+  renderPanel(t.dataset.t);
+});
+// 深链 #c-id / #g-id / #u-id
+(function(){const h=location.hash.slice(1);
+  if(h.startsWith('c-')){const id=h.slice(2);const i=COURSES.findIndex(c=>c.id===id);if(i>=0){document.querySelector('[data-t="course"]').click();setTimeout(()=>openCourse(i),150);return;}}
+  if(h.startsWith('g-')){const id=h.slice(2);const i=GUIDES.findIndex(g=>g.id===id);if(i>=0){document.querySelector('[data-t="guide"]').click();setTimeout(()=>openGuide(i),150);return;}}
+  if(h.startsWith('u-')){document.querySelector('[data-t="update"]').click();return;}
+})();
+renderPanel('course');
+// 上新公告横幅（learn.qwenwork.cn announcement 模块）
+(function(){const el=document.getElementById('newsBanner');if(!el)return;
+  const a=SC.announcement; if(!a||!a.enabled)return;
+  const title=(Array.isArray(a.title)?a.title.join(''):a.title)||'';
+  const desc=(Array.isArray(a.description)?a.description.join(' '):a.description)||'';
+  const href=(a.primaryHref||'').replace('learn.qwenwork.host','learn.qwenwork.cn');
+  el.innerHTML=`<div class="hero reveal in" style="padding:24px 28px;margin-bottom:20px;border-radius:18px">
+    <div class="he">${esc(a.kicker||'')} · ${esc(a.entryLabel||'本期上新')}</div>
+    <h1 style="font-size:23px;margin:8px 0 10px">${esc(title)}</h1>
+    <p style="font-size:13.5px;max-width:760px">${esc(desc).slice(0,180)}${desc.length>180?'…':''}</p>
+  </div>`;})();
+(function(){const el=document.getElementById('srcCount');if(!el)return;
+  const vid=COURSES.filter(c=>c.kind==='视频课'||c.kind==='实战短片').length;
+  const live=COURSES.filter(c=>c.kind==='直播回放').length;
+  el.textContent=`视频课程 ${vid} 门 / 直播回放 ${live} 期 / 使用指南 ${GUIDES.length} 篇 / 最新功能 ${UPDATES.length} 期 / 学习路径 ${PATHS.length} 条`;})();
+</script>
+</body>
+</html>

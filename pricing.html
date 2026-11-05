@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>报价专用 | 千问办公全量系统</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div id="topbar-slot"></div>
+<nav class="sidenav" id="sidenav"></nav>
+<div class="main">
+  <div class="page">
+    <div class="pagehead">
+      <div class="eyebrow">PRICING · 报价专用</div>
+      <h1>报价速查</h1>
+      <p>千问办公个人版三档 + 企业版结构，面客一屏可查。价格同步自官方定价页 qwenwork.cn/pricing。</p>
+    </div>
+
+    <div class="note" style="margin-bottom:20px"><b style="display:inline-flex;align-items:center;gap:5px"><svg style="width:14px;height:14px;flex-shrink:0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.6 2.9 19.4h18.2z"/><path d="M12 9.6v4.2"/><circle cx="12" cy="16.9" r=".85" fill="currentColor" stroke="none"/></svg>面客红线：</b>禁止口播单价，最终以官方报价工具/商务报价为准。下方为官方公开定价，企业版价格需通过官方报价获取。</div>
+
+    <div class="sec-title"><span class="bar"></span>个人版（公开定价）<span class="cnt">连续包月 8 折 · 年付 7 折</span></div>
+    <div class="grid g3" id="personal"></div>
+    <div class="note gr" style="margin-top:12px"><b>每日登录积分：</b>免费版 100 / 标准版 200 / 高级版 300（当日有效）。积分用尽可购买积分包增购（标准版/高级版支持）。</div>
+
+    <div class="sec-title"><span class="bar"></span>企业版（官方统一定价）<span class="cnt">qwenwork.cn/pricing · 企业版</span></div>
+    <div class="grid g2" id="enterprise"></div>
+    <div class="note gr" style="margin-top:12px"><b>企业版说明：</b>企业版官网统一定价；私有化/专有部署联系商务。新购企业年费会员有限量赠送权益，先到先得。企业标准版年付 2,376＝198×12，企业旗舰版年付 3,576＝298×12，官网无额外折扣。</div>
+
+    <div class="sec-title"><span class="bar"></span>竞品价格对照（千问办公 vs WorkBuddy · 同行对齐）<span class="cnt">中立并列</span></div>
+    <table class="cmp" id="wbprice"></table>
+    <div class="note" style="margin-top:12px"><b style="display:inline-flex;align-items:center;gap:5px"><svg style="width:14px;height:14px;flex-shrink:0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.6 2.9 19.4h18.2z"/><path d="M12 9.6v4.2"/><circle cx="12" cy="16.9" r=".85" fill="currentColor" stroke="none"/></svg>口径已核：</b>WorkBuddy 企业旗舰版官方价 198 元/人/月（腾讯销售 PPT 曾误标 98，已废弃）。两边企业 SaaS 入门档同为 198；高阶 VPC 档千问办公企业旗舰版 298（50席起）vs WorkBuddy 企业专享版 316（100席起）。面客禁止口播单价，以官方报价为准。</div>
+
+    <div class="sec-title"><span class="bar"></span>报价话术要点</div>
+    <div class="grid g2" id="tips"></div>
+  </div>
+</div>
+<script src="assets/data.js"></script>
+<script src="assets/app.js"></script>
+<script>
+initShell('pricing');
+document.getElementById('personal').innerHTML=PRICING.personal.map((p,i)=>`
+  <div class="price reveal ${p.best?'feat':''}" style="transition-delay:${i*60}ms">
+    ${p.best?'<span class="badge">推荐</span>':''}
+    <div class="pn">${p.code} · ${p.tag}</div>
+    <div class="pt">${p.name}</div>
+    <div class="amt">${p.price}<small> ${p.unit}</small></div>
+    ${p.old?`<div class="old">原价 ${p.old}</div>`:''}
+    <ul>${p.feat.map(f=>`<li><span>${f}</span></li>`).join('')}</ul>
+    <a class="btn ${p.best?'pri':'gho'}" href="${p.href}" target="_blank" style="justify-content:center">${p.cta}</a>
+  </div>`).join('');
+
+document.getElementById('enterprise').innerHTML=PRICING.enterprise.map((e,i)=>`
+  <div class="price reveal ${e.best?'feat':''}" style="transition-delay:${i*60}ms">
+    ${e.best?'<span class="badge">含 VPC · 推荐</span>':''}
+    <div class="pn">${e.code} · 企业版</div>
+    <div class="pt">${e.name}</div>
+    <div class="amt">${e.price}<small> ${e.unit}</small></div>
+    <div class="old" style="text-decoration:none;color:var(--brand-deep);font-weight:600">${e.yearly}</div>
+    <p style="font-size:12.5px;color:var(--ink3);margin-top:10px;line-height:1.6">${e.desc}</p>
+    <ul>${e.feat.map(f=>`<li><span>${f}</span></li>`).join('')}</ul>
+    <a class="btn ${e.best?'pri':'gho'}" href="https://sales.qwenwork.cn/cs-reservation/product/QW?sourceId=QW_WEB_CONSULT" target="_blank" style="justify-content:center">立即咨询</a>
+  </div>`).join('');
+
+document.getElementById('wbprice').innerHTML=`<thead><tr><th style="width:130px">档位</th><th class="qw">千问办公（阿里）</th><th>WorkBuddy（腾讯）</th></tr></thead><tbody>
+  ${COMPARE.price.rows.map(r=>`<tr><td class="dim">${r.tier}</td><td>${r.qw}</td><td>${r.wb}</td></tr>`).join('')}</tbody>`;
+
+const TIPS=[
+  {t:"先试点再铺开",d:"建议客户先从 1-2 个高频痛点部门（如财务、运营、电商）小范围试点，跑出数据后再决定全员铺开，降低决策门槛。"},
+  {t:"个人版→企业版升级路径",d:"个人版重自由（服务个人），企业版重管控（服务团队）。客户从个人版体验后，按组织管控需求升级企业标准版/旗舰版。"},
+  {t:"积分口径讲清楚",d:"积分是用量单位，每月基础积分+每日登录赠送+积分包增购。高频客户推荐高级版（4000 积分/月）。"},
+  {t:"企业版价格走官方报价",d:"企业标准版/旗舰版/敏捷版/专有版价格不在公开页，必须通过官方报价工具或商务获取，严禁口播估价。"},
+];
+document.getElementById('tips').innerHTML=TIPS.map((x,i)=>`<div class="card reveal" style="transition-delay:${i*50}ms"><h3 style="font-size:15px;font-weight:800;margin-bottom:7px;color:var(--brand-deep)">${x.t}</h3><p style="font-size:13px;color:var(--ink2);line-height:1.7">${x.d}</p></div>`).join('');
+
+requestAnimationFrame(()=>document.querySelectorAll('.reveal').forEach(el=>el.classList.add('in')));
+</script>
+</body>
+</html>
