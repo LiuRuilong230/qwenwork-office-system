@@ -10,18 +10,27 @@
 <link rel="stylesheet" href="assets/style.css">
 <style>
 /* ===== 进站加载动画·视频版（首次访问播放一次） ===== */
-#boot-loader{position:fixed;inset:0;z-index:9999;background:#fff;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;opacity:1;transition:opacity .4s ease}
+#boot-loader{position:fixed;inset:0;z-index:9999;background:#eae9ef;display:flex;align-items:center;justify-content:center;opacity:1;transition:opacity .4s ease}
 #boot-loader.out{opacity:0;pointer-events:none}
-#boot-video{width:min(72vw,66vh,420px);aspect-ratio:1/1;object-fit:contain;display:block}
-#boot-title{font-size:15px;font-weight:700;color:#0a7a3d;letter-spacing:.35em;text-indent:.35em;animation:bootFade .5s .5s ease both}
-@keyframes bootFade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-@media (prefers-reduced-motion:reduce){#boot-title{animation:none!important;opacity:1!important}}
+#boot-inner{display:flex;flex-direction:column;align-items:center;gap:clamp(18px,3.2vh,30px)}
+#boot-stage{position:relative;width:min(60vw,56vh,400px);aspect-ratio:1/1;padding:1.5px;border-radius:30px;background:linear-gradient(140deg,#2fe577 0%,#0a7a49 48%,#2fd978 100%);box-shadow:0 0 0 1px rgba(47,229,119,.16),0 14px 46px rgba(10,122,73,.16),0 0 60px rgba(47,229,119,.22)}
+#boot-frame{position:relative;width:100%;height:100%;border-radius:28.5px;overflow:hidden;background:#eae9ef}
+#boot-video{width:100%;height:100%;object-fit:contain;display:block}
+#boot-title{font-size:clamp(15px,2.1vw,20px);letter-spacing:.16em;font-weight:600;color:#0a7a49;text-indent:.16em}
+#boot-title b{color:#2fd978;margin:0 .4em;font-weight:800}
+@media (prefers-reduced-motion:reduce){#boot-stage{animation:none}}
 </style>
 </head>
 <body>
 <div id="boot-loader" hidden>
-  <video id="boot-video" src="assets/brand/jiaoyin-boot.mp4" autoplay muted playsinline preload="auto"></video>
-  <div id="boot-title">千问办公 · 全量系统</div>
+  <div id="boot-inner">
+    <div id="boot-stage">
+      <div id="boot-frame">
+        <video id="boot-video" src="assets/brand/jiaoyin-boot.mp4" autoplay muted playsinline preload="auto"></video>
+      </div>
+    </div>
+    <div id="boot-title">千问办公<b>·</b>全量系统</div>
+  </div>
 </div>
 <div id="topbar-slot"></div>
 <nav class="sidenav" id="sidenav"></nav>
