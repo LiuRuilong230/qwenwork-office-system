@@ -4,9 +4,25 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>千问办公 · 全量系统 | 产品总览</title>
+<link rel="icon" type="image/png" sizes="32x32" href="assets/brand/jiaoyin-favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="assets/brand/jiaoyin-favicon-16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="assets/brand/jiaoyin-favicon-180.png">
 <link rel="stylesheet" href="assets/style.css">
+<style>
+/* ===== 进站加载动画·视频版（首次访问播放一次） ===== */
+#boot-loader{position:fixed;inset:0;z-index:9999;background:#fff;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;opacity:1;transition:opacity .4s ease}
+#boot-loader.out{opacity:0;pointer-events:none}
+#boot-video{width:min(72vw,66vh,420px);aspect-ratio:1/1;object-fit:contain;display:block}
+#boot-title{font-size:15px;font-weight:700;color:#0a7a3d;letter-spacing:.35em;text-indent:.35em;animation:bootFade .5s .5s ease both}
+@keyframes bootFade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@media (prefers-reduced-motion:reduce){#boot-title{animation:none!important;opacity:1!important}}
+</style>
 </head>
 <body>
+<div id="boot-loader" hidden>
+  <video id="boot-video" src="assets/brand/jiaoyin-boot.mp4" autoplay muted playsinline preload="auto"></video>
+  <div id="boot-title">千问办公 · 全量系统</div>
+</div>
 <div id="topbar-slot"></div>
 <nav class="sidenav" id="sidenav"></nav>
 <div class="main">
@@ -100,6 +116,27 @@ document.getElementById('mods').innerHTML=MODS.map((m,i)=>`<a class="mod reveal"
 
 // 触发 reveal
 requestAnimationFrame(()=>document.querySelectorAll('.reveal').forEach(el=>el.classList.add('in')));
+
+// ===== 进站加载动画（视频版）：每个会话仅首次进站播放 =====
+(function(){
+  const loader=document.getElementById('boot-loader');
+  if(!loader) return;
+  const reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(sessionStorage.getItem('qw_boot_played')||reduced){loader.remove();return;}
+  sessionStorage.setItem('qw_boot_played','1');
+  loader.hidden=false;
+  document.body.style.overflow='hidden';
+  const video=loader.querySelector('video');
+  const done=()=>{loader.classList.add('out');document.body.style.overflow='';setTimeout(()=>loader.remove(),450);};
+  let finished=false;
+  const finish=()=>{if(!finished){finished=true;done();}};
+  video.addEventListener('ended',finish);
+  video.addEventListener('error',()=>{loader.remove();document.body.style.overflow='';});
+  // 兜底：ended 万一没触发（如旧浏览器），8 秒后强制结束
+  setTimeout(finish,8000);
+  // 视频可能已缓存并在监听前就结束
+  if(video.readyState>=4&&video.ended) finish();
+})();
 </script>
 </body>
 </html>
